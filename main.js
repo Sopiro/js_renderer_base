@@ -17,7 +17,7 @@ let time;
 
 // Inputs
 let keys = {};
-let mouse = { down: false, lastX: 0.0, lastY: 0.0, currX: 0.0, currY: 0.0, dx: 0.0, dy: 0.0 };
+let mouse = { last_down: false, curr_down: false, lastX: 0.0, lastY: 0.0, currX: 0.0, currY: 0.0, dx: 0.0, dy: 0.0 };
 
 let renderer;
 let game;
@@ -46,8 +46,27 @@ class Renderer
             gfx.stroke();
     }
 
+    drawRect3D(x, y, z, width, height, filled = false, centered = false)
+    {
+        if (centered)
+        {
+            x -= width / 2.0;
+            y -= height / 2.0;
+        }
+
+        gfx.lineWidth = 1;
+        gfx.rect(x, y, width, height);
+
+        if (filled)
+            gfx.fill();
+        else
+            gfx.stroke();
+    }
+
     drawCircle(x, y, radius, filled = false, centered = true)
     {
+        gfx.lineWidth = 1;
+
         if (!centered)
         {
             x += radius / 2.0;
@@ -63,18 +82,42 @@ class Renderer
             gfx.stroke();
     }
 
+    drawCircle3D(x, y, z, radius = 5, filled = false, centered = true)
+    {
+        gfx.lineWidth = 1;
+
+        x = x / z + WIDTH / 2.0;
+        y = y / z + HEIGHT / 2.0;
+
+        this.drawCircle(x, y, radius, filled, centered);
+    }
+
     drawLine(x0, y0, x1, y1, lineWidth = 1)
     {
         gfx.lineWidth = lineWidth;
+
         gfx.beginPath();
         gfx.moveTo(x0, y0);
         gfx.lineTo(x1, y1);
         gfx.stroke();
     }
 
+    drawLine3D(x0, y0, z0, x1, y1, z1, lineWidth = 1)
+    {
+        gfx.lineWidth = lineWidth;
+
+        x0 = x0 / z0 + WIDTH / 2.0;
+        y0 = y0 / z0 + HEIGHT / 2.0;
+        x1 = x1 / z1 + WIDTH / 2.0;
+        y1 = y1 / z1 + HEIGHT / 2.0;
+
+        this.drawLine(x0, y0, x1, y1, lineWidth);
+    }
+
     drawText(x, y, content, fontSize = 20)
     {
         gfx.font = fontSize + "px verdana";
+
         gfx.fillText(content, x, y);
     }
 }
@@ -95,11 +138,15 @@ class Game
     {
         // Render Code Here
 
-        this.r.drawCircle(100, 100, 10, true);
-        this.r.drawRect(100, 100, 40, 40, false, true);
+        this.r.drawCircle3D(100, 100, 1, 10);
+        this.r.drawCircle3D(100, -100, 1, 10);
+        this.r.drawCircle3D(-100, -100, 1, 10);
+        this.r.drawCircle3D(-100, 100, 1, 10);
 
-        this.r.drawLine(100, 100, mouse.currX, mouse.currY, Math.dist(100, 100, mouse.currX, mouse.currY) / 50);;
-        this.r.drawText(mouse.currX, mouse.currY, "ㅇㅅㅇ");
+        // this.r.drawRect(100, 100, 40, 40, false, true);
+
+        // this.r.drawLine(100, 100, mouse.currX, mouse.currY, Math.dist(100, 100, mouse.currX, mouse.currY) / 50);;
+        // this.r.drawText(mouse.currX, mouse.currY, "ㅇㅅㅇ");
     }
 }
 
@@ -109,6 +156,7 @@ function update(delta)
     mouse.dy = mouse.currY - mouse.lastY;
     mouse.lastX = mouse.currX;
     mouse.lastY = mouse.currY;
+    mouse.last_down = mouse.curr_down;
 
     game.update(delta);
 }
@@ -213,8 +261,6 @@ function run()
     {
         update(delta);
         render();
-
-        console.log(time);
     }
     else if (pause)
     {
